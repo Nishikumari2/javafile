@@ -1,0 +1,32 @@
+public void saveItem() throws Exception {
+    String lviItemD = cvoMapIn.get("sviItemD").toString();
+    String lvsItemTaxDspsl, lvsIsInAnyOrdr;
+    RowSet lvoItemGrid = (RowSet) cvoMapIn.get("svoItemGrid");
+    Row lvoItemRow = null;
+
+    while (lvoItemGrid.hasNextRow()) {
+      lvoItemRow = lvoItemGrid.getNextRow();
+      lvsItemTaxDspsl = lvoItemRow.get("svsItemTaxDspsl");
+      if (lvsItemTaxDspsl == null || lvsItemTaxDspsl.trim().isEmpty()) {
+        lvsItemTaxDspsl = "0";
+        lvoItemRow.put("rvsItemTaxDspsl", lvsItemTaxDspsl);
+      }
+      lvsIsInAnyOrdr = lvoItemRow.get("svsIsInAnyOrdr");
+      if ("1".equals(lvsIsInAnyOrdr)) {
+        throw new Exception("E: You cannot edit the item it is under an purchase order");
+      }
+      if ("0".equals(lviItemD) || "-1".equals(lviItemD) || lviItemD.isEmpty()) {
+        cvoDBManager.update(cvsSqlPath + "i1rTabItem", "app", (HashMap) lvoItemRow);
+      } else {
+        cvoDBManager.update(cvsSqlPath + "u1rTabItem", "app", (HashMap) lvoItemRow);
+      }
+    }
+
+    if (cvoDBManager.canCommit("app")) {
+      cvoDBManager.commitTrans("app");
+      cvoMapIn.put("rvsAdnlFltrWhere", "");
+      cvoMapOut.put("svoItemGrid", cvoDBManager.selectResultSet(cvsSqlPath + "sarShowItems", "app", cvoMapIn));
+      cvoMapOut.put(ConstantKey.responseMsg, MessageCodes.MSG1);
+    }
+  }
+}
